@@ -1,17 +1,38 @@
-import { chromium, Page } from "playwright";
+import { Page } from "playwright";
 import * as cheerio from 'cheerio';
+import fetch from "node-fetch";
 
 const visited = new Set<string>();
 
 // TODO: check if the server is online (to much time consuming with fetch, for the moment I accept the isValidUrl solution)
 // TODO: check if the site is redirecting to another URL (I do something similar in normalizeUrl using the hostname)
 // TODO: verify only specific routes for the data that needs to be scrapped (gotta think on a method here...)
+// TODO: what if the given domain is a subdomain? it should go through entire domain or check only the subdomain?
+// TODO: need to work on redirect codes (300) too
+// TODO: maybe issues with CORS? need to check that also
 
-function isValidUrl(url: string): boolean {
+// TODO: remove if not needed anymore, for the moment I keep it for testing purposes
+function isValidURL(url: string): boolean {
     try {
         new URL(url);
         return true;
     } catch {
+        return false;
+    }
+}
+
+async function urlIsReachable(url: string): Promise<boolean> {
+    try {
+        new URL(url);
+        let response = await fetch(url, { method: 'HEAD' });
+    
+        // in case that the server does not accept HEAD method
+        if (response.status === 405) {
+            response = await fetch(url, { method: 'GET' });
+        }
+
+        return response.ok;
+    } catch(error) {
         return false;
     }
 }
@@ -58,7 +79,6 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<voi
     if (!(await isHtmlPage(normalizedUrl, page))) return;
 
     visited.add(normalizedUrl);
-    console.log("Visiting ", normalizedUrl);
     await page.goto(normalizedUrl, { waitUntil: 'domcontentloaded' });
 
     const html: string = await page.content();
@@ -76,7 +96,7 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<voi
 
                 linksList.add(linkUrl);
             } catch(error) {
-                console.log("Error occured when trying to obtain the href attribute from the links: ", error);
+                console.error("Error occured when trying to obtain the href attribute from the links: ", error);
             }
         }
     });
@@ -103,17 +123,8 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<voi
     }
 }
 
-(async () => {
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-    const url = 'https://kkcger.com';
-
-    if (!isValidUrl(url)) {
-        console.log("Invalid URL: " + url);
-        return;
-    }
-    const origin = new URL(url);
-    
-    await getDomainLinks(page, url, origin);
-    await browser.close();
-})();
+export default {
+    getDomainLinks: getDomainLinks,
+    urlIsReachable: urlIsReachable,
+    isValidURL: isValidURL
+}
