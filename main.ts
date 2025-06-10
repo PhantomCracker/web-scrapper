@@ -1,17 +1,26 @@
-import { chromium } from "playwright";
-import * as cheerio from 'cheerio';
+// import phoneNumberHelper from './helpers/phoneNumberHelper';
 
-async function scrapeWebsite(url) {
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+// phoneNumberHelper.getPhoneNumbers('https://locksmithoncall247.co.uk/')
+//     .then(data => console.log(data));
 
-    await page.goto(url, { waitUntil: 'networkidle' });
+import fs from 'fs';
+import csvParser from 'csv-parser';
 
-    const html = await page.content();
-    console.log(html);
-
-    return html;
+interface DomainRow {
+    domain?: string;
 }
 
-scrapeWebsite('https://example.com/')
-    .then(data => console.log(data));
+const domainsList = new Set<string>();
+
+fs.createReadStream('./data/sample-websites.csv')
+    .pipe(csvParser())
+    .on('data', (row: DomainRow) => {
+        if (row.domain) {
+            domainsList.add(row.domain.trim());
+        }
+    })
+    .on('end', () => {
+        domainsList.forEach((domain) => {
+            console.log(domain);
+        })
+    })
