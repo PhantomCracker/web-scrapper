@@ -15,6 +15,7 @@ import fileHelper from './helpers/fileHelper';
     const page: Page = await browser.newPage();
     
     for (let domain of domainsList) {
+        // let domain = 'https://timent.com/';
         // append https because 'new URL' fails otherwise as it is not a valid URL
         if (!/^https?:\/\//i.test(domain)) {
             domain = 'https://' + domain;
@@ -30,8 +31,9 @@ import fileHelper from './helpers/fileHelper';
             const origin: URL = new URL(domain);
         
             console.log("Visiting each link from the following website: ", domain);
-            await urlHelper.getDomainLinks(page, domain, origin);
+            const domainLinks = await urlHelper.getDomainLinks(page, domain, origin);
             console.log("Finished with success!");
+            console.log(domainLinks);
         } catch(error) {
             console.error("Error processing the domain " + domain + " with the following error: " + error);
         }

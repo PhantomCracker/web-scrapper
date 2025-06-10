@@ -7,12 +7,19 @@ import collectDataHelper from "./collectDataHelper";
 
 const visited = new Set<string>();
 
+interface CollectedData {
+  phoneNumbersList: string[];
+  socialMediaLinks: string[];
+}
+
 // TODO: check if the server is online (to much time consuming with fetch, for the moment I accept the isValidUrl solution)
 // TODO: check if the site is redirecting to another URL (I do something similar in normalizeUrl using the hostname)
 // TODO: verify only specific routes for the data that needs to be scrapped (gotta think on a method here...)
 // TODO: what if the given domain is a subdomain? it should go through entire domain or check only the subdomain?
 // TODO: need to work on redirect codes (300) too
 // TODO: maybe issues with CORS? need to check that also
+// TODO: remove routes like blog or other or similarities, terms and conditions, reviews, disclaimer
+// TODO: discover blog routes and remove them
 
 // TODO: remove if not needed anymore, for the moment I keep it for testing purposes
 function isValidURL(url: string): boolean {
@@ -75,11 +82,12 @@ async function isHtmlPage(url: string, page: Page): Promise<boolean> {
     }
 }
 
-async function getDomainLinks(page: Page, url: string, origin: URL): Promise<void> {
+async function getDomainLinks(page: Page, url: string, origin: URL): Promise<CollectedData> {
+    console.log("URL: ", url);
     const normalizedUrl: string = normalizeUrl(url);
 
-    if (visited.has(normalizedUrl)) return;
-    if (!(await isHtmlPage(normalizedUrl, page))) return;
+    if (visited.has(normalizedUrl)) return { phoneNumbersList: [], socialMediaLinks: [] };
+    if (!(await isHtmlPage(normalizedUrl, page))) return { phoneNumbersList: [], socialMediaLinks: [] };
 
     visited.add(normalizedUrl);
     await page.goto(normalizedUrl, { waitUntil: 'domcontentloaded' });
@@ -116,16 +124,25 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<voi
         }
     });
 
+    const phoneNumbersList = await collectDataHelper.getPhoneNumbers(page, normalizedUrl);
+    const socialMediaLinks = await collectDataHelper.getSocialMediaLinks(page, normalizedUrl);
+
     // iterate through each link from the same domain
     for (const link of sameDomainLinks) {
         const normalizedLink: string = normalizeUrl(link);
 
         if (!visited.has(normalizedLink)) {
-            await getDomainLinks(page, link, origin);
-            const collectedPhoneNumbers = await collectDataHelper.getPhoneNumbers(page, link);
-            console.log("Phone numbers collected from link: " + collectedPhoneNumbers);
+            const newUrlResult = await getDomainLinks(page, link, origin);
+            
+            phoneNumbersList.push(...newUrlResult.phoneNumbersList);
+            socialMediaLinks.push(...newUrlResult.socialMediaLinks);
         }
     }
+
+    return {
+        phoneNumbersList: Array.from(new Set(phoneNumbersList)),
+        socialMediaLinks: Array.from(new Set(socialMediaLinks)),
+    };
 }
 
 export default {
