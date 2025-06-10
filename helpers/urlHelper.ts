@@ -1,6 +1,9 @@
 import { Page } from "playwright";
 import * as cheerio from 'cheerio';
 import fetch from "node-fetch";
+import type { Response } from 'node-fetch';
+
+import collectDataHelper from "./collectDataHelper";
 
 const visited = new Set<string>();
 
@@ -24,7 +27,7 @@ function isValidURL(url: string): boolean {
 async function urlIsReachable(url: string): Promise<boolean> {
     try {
         new URL(url);
-        let response = await fetch(url, { method: 'HEAD' });
+        let response: Response = await fetch(url, { method: 'HEAD' });
     
         // in case that the server does not accept HEAD method
         if (response.status === 405) {
@@ -119,6 +122,8 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<voi
 
         if (!visited.has(normalizedLink)) {
             await getDomainLinks(page, link, origin);
+            const collectedPhoneNumbers = await collectDataHelper.getPhoneNumbers(page, link);
+            console.log("Phone numbers collected from link: " + collectedPhoneNumbers);
         }
     }
 }

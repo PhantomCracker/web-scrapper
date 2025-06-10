@@ -1,8 +1,3 @@
-// import phoneNumberHelper from './helpers/phoneNumberHelper';
-
-// phoneNumberHelper.getPhoneNumbers('https://locksmithoncall247.co.uk/')
-//     .then(data => console.log(data));
-
 import { Browser, chromium, Page } from 'playwright';
 
 import urlHelper from './helpers/urlHelper';
