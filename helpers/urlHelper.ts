@@ -19,16 +19,6 @@ interface CollectedData {
 // TODO: remove routes like blog or other or similarities, terms and conditions, reviews, disclaimer
 // TODO: discover blog routes and remove them
 
-// TODO: remove if not needed anymore, for the moment I keep it for testing purposes
-function isValidURL(url: string): boolean {
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
 async function urlIsReachable(url: string): Promise<boolean> {
     try {
         new URL(url);
@@ -146,6 +136,5 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<Col
 
 export default {
     getDomainLinks: getDomainLinks,
-    urlIsReachable: urlIsReachable,
-    isValidURL: isValidURL
+    urlIsReachable: urlIsReachable
 }

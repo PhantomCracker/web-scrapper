@@ -4,10 +4,9 @@ import pMap from 'p-map';
 import urlHelper from './helpers/urlHelper';
 import fileHelper from './helpers/fileHelper';
 import collectDataHelper from './helpers/collectDataHelper';
+import playwrightHelper from './helpers/playwrightHelper';
 
 // TODO: retry failed domains a number of times (1-3 times)
-// TODO: avoid zombie processes by closing the browser using process signals
-// TODO: correctly close all the processes to avoid memory leak
 // TODO: add config file for concurency and other global variables like social media
 (async () => {
     interface AnalystData {
@@ -20,6 +19,7 @@ import collectDataHelper from './helpers/collectDataHelper';
     // const domainsList = await fileHelper.readDomainsFromCSV(filePath);
     const domainsList = ['https://timent.com/'];
     const browser: Browser = await chromium.launch({ headless: true });
+    playwrightHelper.shutdownOnSignals(browser);
 
     let analystData: AnalystData = {
         websitesCrawled: 0,
@@ -47,15 +47,7 @@ import collectDataHelper from './helpers/collectDataHelper';
 
             page = await browser.newPage();
             // block unused resources
-            await page.route('**/*', async (route) => {
-                const resourceType = route.request().resourceType();
-
-                if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-                    await route.abort();
-                } else {
-                    await route.continue();
-                }
-            })
+            playwrightHelper.blockUnusedResources(page);
 
             const origin: URL = new URL(domain);
             
@@ -81,7 +73,8 @@ import collectDataHelper from './helpers/collectDataHelper';
                 } catch(error) {
                     console.error("Unable to close the page for ", domain);
                 }
-            } 
+            }
+            playwrightHelper.safeShutdown(browser);
         }
     }
 
@@ -92,6 +85,5 @@ import collectDataHelper from './helpers/collectDataHelper';
     console.log("Crawled a total of " + analystData.physicalAddressesCrawled + " physical addresses");
     console.log("Crawled a total of " + analystData.phonesCrawled + " phone numbers");
     console.log("Crawled a total of " + analystData.socialMediaCrawled + " social media links");
-
-    await browser.close();
+    
 })();
