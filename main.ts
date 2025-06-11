@@ -6,9 +6,6 @@ import fileHelper from './helpers/fileHelper';
 import collectDataHelper from './helpers/collectDataHelper';
 
 // TODO: retry failed domains a number of times (1-3 times)
-// TODO: concurent crawling (multiple domains at the same time)
-// TODO: use the same browser but open multiple pages (i need to also check the performance regarding this)
-// TODO: block unused resources from website (images (need to think more regarding this maybe some images contain useful data), ads, fonts, etc)
 // TODO: avoid zombie processes by closing the browser using process signals
 // TODO: correctly close all the processes to avoid memory leak
 // TODO: add config file for concurency and other global variables like social media
@@ -22,8 +19,7 @@ import collectDataHelper from './helpers/collectDataHelper';
     const filePath: string = './data/sample-websites.csv';
     // const domainsList = await fileHelper.readDomainsFromCSV(filePath);
     const domainsList = ['https://timent.com/'];
-    const browser: Browser = await chromium.launch();
-    const page: Page = await browser.newPage();
+    const browser: Browser = await chromium.launch({ headless: true });
 
     let analystData: AnalystData = {
         websitesCrawled: 0,
@@ -33,6 +29,9 @@ import collectDataHelper from './helpers/collectDataHelper';
     }
 
     async function crawlDomain(domain: string): Promise<void> {
+        // need the page in order to close correctly (even on error) with finally
+        let page: Page | undefined;
+
         // append https because 'new URL' fails otherwise as it is not a valid URL
         if (!/^https?:\/\//i.test(domain)) {
             domain = 'https://' + domain;
@@ -46,7 +45,18 @@ import collectDataHelper from './helpers/collectDataHelper';
                 return;
             }
 
-            const page: Page = await browser.newPage();
+            page = await browser.newPage();
+            // block unused resources
+            await page.route('**/*', async (route) => {
+                const resourceType = route.request().resourceType();
+
+                if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+                    await route.abort();
+                } else {
+                    await route.continue();
+                }
+            })
+
             const origin: URL = new URL(domain);
             
             // TODO: check if website could not be crawled from other reasons
@@ -61,10 +71,17 @@ import collectDataHelper from './helpers/collectDataHelper';
             analystData.phonesCrawled += domainLinks.phoneNumbersList.length;
             analystData.socialMediaCrawled += domainLinks.socialMediaLinks.length;
 
-            await page.close();
             console.log(domainLinks);
         } catch(error) {
             console.error("Error processing the domain " + domain + " with the following error: " + error);
+        } finally {
+            if (page && !page.isClosed()) {
+                try {
+                    await page.close();
+                } catch(error) {
+                    console.error("Unable to close the page for ", domain);
+                }
+            } 
         }
     }
 

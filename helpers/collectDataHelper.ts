@@ -64,7 +64,7 @@ async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
         try {
             if (!iFrameSource) continue;
             // navigate to iFrame source in a new context because it can handle CORS in a better manner
-            const browser: Browser = await chromium.launch();
+            const browser: Browser = await chromium.launch({ headless: true });
             const iFramePage = await browser.newPage();
 
             await iFramePage.goto(iFrameSource, { waitUntil: 'domcontentloaded' });
@@ -141,17 +141,6 @@ async function getPhysicalAddress(page: Page, url: string): Promise<string[]> {
     
     return Array.from(new Set(addressesList));
 }
-
-// (async () => {
-//     const url = 'https://www.davidprieto.realestate/';
-//     const browser: Browser = await chromium.launch();
-//     const page: Page = await browser.newPage();
-//     // const phoneNumbers = await getPhoneNumbers(page, url);
-//     // console.log(phoneNumbers);
-
-//     const address = await getPhysicalAddress(page, url);
-//     console.log('address:', address);
-// })();
 
 export default {
     getPhoneNumbers: getPhoneNumbers,
