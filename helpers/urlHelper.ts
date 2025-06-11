@@ -12,8 +12,6 @@ interface CollectedData {
   socialMediaLinks: string[];
 }
 
-// TODO: check if the server is online (to much time consuming with fetch, for the moment I accept the isValidUrl solution)
-// TODO: check if the site is redirecting to another URL (I do something similar in normalizeUrl using the hostname)
 // TODO: verify only specific routes for the data that needs to be scrapped (gotta think on a method here...)
 // TODO: what if the given domain is a subdomain? it should go through entire domain or check only the subdomain?
 // TODO: need to work on redirect codes (300) too
@@ -83,6 +81,7 @@ async function isHtmlPage(url: string, page: Page): Promise<boolean> {
 }
 
 async function getDomainLinks(page: Page, url: string, origin: URL): Promise<CollectedData> {
+    // TODO: display this log only on verbose mode
     console.log("URL: ", url);
     const normalizedUrl: string = normalizeUrl(url);
 
