@@ -16,8 +16,8 @@ import playwrightHelper from './helpers/playwrightHelper';
         physicalAddressesCrawled: number
     }
     const filePath: string = './data/sample-websites.csv';
-    // const domainsList = await fileHelper.readDomainsFromCSV(filePath);
-    const domainsList = ['https://timent.com/'];
+    const domainsList = await fileHelper.readDomainsFromCSV(filePath);
+    // const domainsList = ['https://timent.com/', 'kansaslimousin.org', 'kkcger.com'];
     const browser: Browser = await chromium.launch({ headless: true });
     playwrightHelper.shutdownOnSignals(browser);
 
@@ -42,6 +42,7 @@ import playwrightHelper from './helpers/playwrightHelper';
 
             if (!isValidAndReachableURL) {
                 console.log("Invalid URL: " + domain);
+                analystData.websitesCrawled++;
                 return;
             }
 
@@ -51,7 +52,6 @@ import playwrightHelper from './helpers/playwrightHelper';
 
             const origin: URL = new URL(domain);
             
-            // TODO: check if website could not be crawled from other reasons
             analystData.websitesCrawled++;
             console.log("Visiting each link from the following website: ", domain);
 
@@ -64,6 +64,7 @@ import playwrightHelper from './helpers/playwrightHelper';
             analystData.socialMediaCrawled += domainLinks.socialMediaLinks.length;
 
             console.log(domainLinks);
+            console.log("Domains crawled: ", analystData.websitesCrawled);
         } catch(error) {
             console.error("Error processing the domain " + domain + " with the following error: " + error);
         } finally {
@@ -74,7 +75,6 @@ import playwrightHelper from './helpers/playwrightHelper';
                     console.error("Unable to close the page for ", domain);
                 }
             }
-            playwrightHelper.safeShutdown(browser);
         }
     }
 
@@ -86,4 +86,5 @@ import playwrightHelper from './helpers/playwrightHelper';
     console.log("Crawled a total of " + analystData.phonesCrawled + " phone numbers");
     console.log("Crawled a total of " + analystData.socialMediaCrawled + " social media links");
     
+    playwrightHelper.safeShutdown(browser);
 })();

@@ -23,7 +23,6 @@ const SOCIAL_DOMAINS = [
 
 // TOASK: if I have found a phone number, should I continue looking for others or should I stop it?
 // TODO: improve the method in getting the phone numbers
-// TODO: 415-626-4474 and (415) 626-4474 are the same, fix this
 async function getPhoneNumbers(page: Page, url: string) {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     
