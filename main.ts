@@ -2,6 +2,7 @@ import { Browser, chromium, Page } from 'playwright';
 
 import urlHelper from './helpers/urlHelper';
 import fileHelper from './helpers/fileHelper';
+import collectDataHelper from './helpers/collectDataHelper';
 
 // TODO: retry failed domains 
 // TODO: concurent crawling (multiple domains at the same time)
@@ -29,11 +30,14 @@ import fileHelper from './helpers/fileHelper';
             }
             
             const origin: URL = new URL(domain);
+
+            const physicalAddressesList = await collectDataHelper.getPhysicalAddress(page, domain);
+            console.log("Physical addresses for " + domain + " are: " + physicalAddressesList);            
         
-            console.log("Visiting each link from the following website: ", domain);
-            const domainLinks = await urlHelper.getDomainLinks(page, domain, origin);
-            console.log("Finished with success!");
-            console.log(domainLinks);
+            // console.log("Visiting each link from the following website: ", domain);
+            // const domainLinks = await urlHelper.getDomainLinks(page, domain, origin);
+            // console.log("Finished with success!");
+            // console.log(domainLinks);
         } catch(error) {
             console.error("Error processing the domain " + domain + " with the following error: " + error);
         }

@@ -1,6 +1,11 @@
 import { chromium, Page, Browser } from "playwright";
 import * as cheerio from 'cheerio';
 
+interface LinkInfo {
+    href: string,
+    text: string | null | undefined
+}
+
 const SOCIAL_DOMAINS = [
   'facebook.com',
   'twitter.com',
@@ -82,18 +87,74 @@ function isSocialLink(url: string): boolean {
   return SOCIAL_DOMAINS.some(domain => url.includes(domain));
 }
 
+// TODO: Instead of regex, maybe i should look for a npm package that might work with Google for addresses
+async function getPhysicalAddress(page: Page, url: string): Promise<string[]> {
+    let addressesList: string[] = [];
+    let addressRegex: RegExp = /\d{1,5}\s[\w\s.,'-]+,\s*[\w\s.'-]+,\s*[A-Z]{2}\s*\d{5}(-\d{4})?/gi; 
+
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+    const linksList: LinkInfo[] = await page.$$eval('a', (anchorsList: Element[]) => {
+        return anchorsList.map(anchor => ({ 
+            href: (anchor as HTMLAnchorElement).href, 
+            text: anchor.textContent?.toLowerCase() 
+        }));
+    });
+    const contactLinksList: LinkInfo[] | undefined = linksList.filter((link: LinkInfo) => {
+        return (link.text?.includes('contact') || link.text?.includes('about') || link.text?.includes('find us')) ||
+                link.href.includes('contact') ||
+                link.href.includes('about');
+    });
+
+    for (const link of contactLinksList) {
+        if (!link.href) continue;
+
+        await page.goto(link.href, { waitUntil: 'domcontentloaded' });
+        
+        const html = await page.content();
+        const $ = cheerio.load(html);
+        // check <address> element
+        const addressText = $('address').text().trim();
+        
+        if (addressText.length > 0) {
+            addressesList.push(addressText);
+        }
+
+        // check the name classes
+        $('[class*="contact"], [id*="contact"], [class*="address"], [id*="address"]').each((_, element) => {
+            const elementText: string = $(element).text();
+            const matchWithRegex: RegExpMatchArray | null = elementText.match(addressRegex);
+
+            if (matchWithRegex && matchWithRegex.length > 0) {
+                addressesList.push(matchWithRegex[0]);
+            }
+        })
+
+        // check footer
+        const footerText: string = $('footer').text().trim();
+        const footerMatch: RegExpMatchArray | null = footerText.match(addressRegex);
+        
+        if (footerMatch && footerMatch.length > 0) {
+            addressesList.push(footerMatch[0]);
+        }
+    }
+    
+    return Array.from(new Set(addressesList));
+}
+
 // (async () => {
-//     const url = 'https://timent.com/';
+//     const url = 'https://www.davidprieto.realestate/';
 //     const browser: Browser = await chromium.launch();
 //     const page: Page = await browser.newPage();
 //     // const phoneNumbers = await getPhoneNumbers(page, url);
 //     // console.log(phoneNumbers);
 
-//     const socialMediaLinks = await getSocialMediaLinks(page, url, browser);
-//     // console.log('Social Media Links:', socialMediaLinks);
+//     const address = await getPhysicalAddress(page, url);
+//     console.log('address:', address);
 // })();
 
 export default {
     getPhoneNumbers: getPhoneNumbers,
-    getSocialMediaLinks: getSocialMediaLinks
+    getSocialMediaLinks: getSocialMediaLinks,
+    getPhysicalAddress: getPhysicalAddress
 }
