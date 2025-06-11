@@ -7,18 +7,18 @@ interface LinkInfo {
 }
 
 const SOCIAL_DOMAINS = [
-  'facebook.com',
-  'twitter.com',
-  'instagram.com',
-  'linkedin.com',
-  'tiktok.com',
-  'youtube.com',
-  'pinterest.com',
-  'wa.me',
-  'whatsapp.com',
-  'reddit.com',
-  'snapchat.com',
-  'threads.net'
+    'facebook.com',
+    'twitter.com',
+    'instagram.com',
+    'linkedin.com',
+    'tiktok.com',
+    'youtube.com',
+    'pinterest.com',
+    'wa.me',
+    'whatsapp.com',
+    'reddit.com',
+    'snapchat.com',
+    'threads.net'
 ];
 
 // TOASK: if I have found a phone number, should I continue looking for others or should I stop it?
@@ -26,22 +26,28 @@ const SOCIAL_DOMAINS = [
 async function getPhoneNumbers(page: Page, url: string) {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     
-    const phoneRegex = /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,5}\)?[\s.-]?)?(\d{3,5}[\s.-]?\d{3,5}|\d{7,12})/g;
+    const phoneRegex = /(?:(?:\+|00)?(\d{1,3}))?[\s\-\.]?\(?(?:\d{2,4})\)?[\s\-\.]?\d{2,4}[\s\-\.]?\d{2,4}[\s\-\.]?\d{0,6}/g;
     const html = await page.content();
     const $ = cheerio.load(html);
-    const phoneMatches = $('body').text().match(phoneRegex) || [];
-    const phoneNumbers = Array.from(
-        new Set(
-            phoneMatches
-                .map(phone => {
-                    phone = phone.trim();
-                    if (phone.replace(/\D/g, '').length >= 8) {
-                        return phone;
-                    }
-                })
-                .filter((phone) => typeof phone === 'string') // be sure that I return string[]
-            )
-        );
+    let phoneNumbers: string[] = []
+
+    try {
+        const phoneMatches = $('body').text().match(phoneRegex) || [];
+        phoneNumbers = Array.from(
+            new Set(
+                phoneMatches
+                    .map(phone => {
+                        phone = phone.trim();
+                        if (phone.replace(/\D/g, '').length >= 8) {
+                            return phone;
+                        }
+                    })
+                    .filter((phone) => typeof phone === 'string') // be sure that I return string[]
+                )
+            );
+    } catch(error) {
+        console.error("Could not get the phone number")
+    }
 
     return Array.from(new Set(phoneNumbers));
 }
@@ -50,12 +56,20 @@ async function getPhoneNumbers(page: Page, url: string) {
 async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     
+    let mainPageLinksList: string[] = [];
     const html = await page.content();
     const $ = cheerio.load(html);
-    const mainPageLinksList: string[] = $('a')
+    try {
+        mainPageLinksList = $('a')
         .map((_, element) => $(element).attr('href'))
         .get() // transform Cheerio object into JS Array
         .filter(isSocialLink);
+    } catch(error) {
+        console.error("Could not get the social media");
+    }
+
+    // down from this line it will check the iFrames too for specific links
+    /*
     const iFramesSourcesList = await page.$$eval('iframe', iframes => iframes.map(iframe => iframe.getAttribute('src')).filter(Boolean)); // use Playwright instead of Cheerio because i don't need the entire HTML
     let iFrameLinksList: string[] = [];
 
@@ -78,8 +92,10 @@ async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
             console.error("Could not access the iframe: ", error);
         }
     }
-
     return Array.from(new Set([...mainPageLinksList, ...iFrameLinksList]));
+    */
+
+    return Array.from(new Set(mainPageLinksList));
 }
 
 function isSocialLink(url: string): boolean {
@@ -93,49 +109,53 @@ async function getPhysicalAddress(page: Page, url: string): Promise<string[]> {
 
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-    const linksList: LinkInfo[] = await page.$$eval('a', (anchorsList: Element[]) => {
-        return anchorsList.map(anchor => ({ 
-            href: (anchor as HTMLAnchorElement).href, 
-            text: anchor.textContent?.toLowerCase() 
-        }));
-    });
-    const contactLinksList: LinkInfo[] | undefined = linksList.filter((link: LinkInfo) => {
-        return (link.text?.includes('contact') || link.text?.includes('about') || link.text?.includes('find us')) ||
-                link.href.includes('contact') ||
-                link.href.includes('about');
-    });
+    try {
+        const linksList: LinkInfo[] = await page.$$eval('a', (anchorsList: Element[]) => {
+            return anchorsList.map(anchor => ({ 
+                href: (anchor as HTMLAnchorElement).href, 
+                text: anchor.textContent?.toLowerCase() 
+            }));
+        });
+        const contactLinksList: LinkInfo[] | undefined = linksList.filter((link: LinkInfo) => {
+            return (link.text?.includes('contact') || link.text?.includes('about') || link.text?.includes('find us')) ||
+                    link.href.includes('contact') ||
+                    link.href.includes('about');
+        });
 
-    for (const link of contactLinksList) {
-        if (!link.href) continue;
+        for (const link of contactLinksList) {
+            if (!link.href) continue;
 
-        await page.goto(link.href, { waitUntil: 'domcontentloaded' });
-        
-        const html = await page.content();
-        const $ = cheerio.load(html);
-        // check <address> element
-        const addressText = $('address').text().trim();
-        
-        if (addressText.length > 0) {
-            addressesList.push(addressText);
-        }
-
-        // check the name classes
-        $('[class*="contact"], [id*="contact"], [class*="address"], [id*="address"]').each((_, element) => {
-            const elementText: string = $(element).text();
-            const matchWithRegex: RegExpMatchArray | null = elementText.match(addressRegex);
-
-            if (matchWithRegex && matchWithRegex.length > 0) {
-                addressesList.push(matchWithRegex[0]);
+            await page.goto(link.href, { waitUntil: 'domcontentloaded' });
+            
+            const html = await page.content();
+            const $ = cheerio.load(html);
+            // check <address> element
+            const addressText = $('address').text().trim();
+            
+            if (addressText.length > 0) {
+                addressesList.push(addressText);
             }
-        })
 
-        // check footer
-        const footerText: string = $('footer').text().trim();
-        const footerMatch: RegExpMatchArray | null = footerText.match(addressRegex);
-        
-        if (footerMatch && footerMatch.length > 0) {
-            addressesList.push(footerMatch[0]);
+            // check the name classes
+            $('[class*="contact"], [id*="contact"], [class*="address"], [id*="address"]').each((_, element) => {
+                const elementText: string = $(element).text();
+                const matchWithRegex: RegExpMatchArray | null = elementText.match(addressRegex);
+
+                if (matchWithRegex && matchWithRegex.length > 0) {
+                    addressesList.push(matchWithRegex[0]);
+                }
+            })
+
+            // check footer
+            const footerText: string = $('footer').text().trim();
+            const footerMatch: RegExpMatchArray | null = footerText.match(addressRegex);
+            
+            if (footerMatch && footerMatch.length > 0) {
+                addressesList.push(footerMatch[0]);
+            }
         }
+    } catch(error) {
+        console.error("Error on retrieving the anchor element");
     }
     
     return Array.from(new Set(addressesList));

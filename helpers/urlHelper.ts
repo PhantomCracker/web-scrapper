@@ -6,84 +6,21 @@ import type { Response } from 'node-fetch';
 import collectDataHelper from "./collectDataHelper";
 
 // please note that this list will suffer updates continuously
-const ROUTE_BLOCKLIST = [
-    'blog',
-    'terms',
-    'terms-and-conditions',
-    'privacy',
-    'review',
-    'disclaimer',
-    'legal',
-    'cookie',
-    'policy',
-    'faq',
-    'other',
-    'pdf',
-    'images',
-    'product',
-    'downloads',
-    'log',
-    'sitemap',
-    'wp-content',
-    'podcast',
-    'tag',
-    'news',
-    'comment',
-    'page',
-    'feed',
-    'author',
-    'search',
-    'category',
-    'archive',
-    'admin',
-    'dashboard',
-    'login',
-    'register',
-    'signup',
-    'cart',
-    'checkout',
-    'account',
-    'profile',
-    'settings',
-    'password',
-    'edit',
-    'update',
-    'delete',
-    'static',
-    'assets',
-    'media',
-    'uploads',
-    'rss',
-    'xml',
-    'json',
-    'api',
-    'pdf',
-    'help',
-    'support',
-    'press',
-    'calendar',
-    'store',
-    'shop',
-    'basket',
-    'order',
-    'invoice',
-    'bestsellers',
-    'category',
-    'collections',
-    'error',
-    '404',
-    'maintenance',
-    'tmp',
-    'temp',
-    'item',
-    'photo'
+const ROUTE_WHITELIST = [
+    'contact',
+    'about',
+    'impressum',
+    'company',
+    'offices',
+    'find-us',
+    'team'
 ];
 
 const visited = new Set<string>();
 
 interface CollectedData {
-  phoneNumbersList: string[];
-  socialMediaLinks: string[];
+    phoneNumbersList: string[];
+    socialMediaLinks: string[];
 }
 
 // TODO: verify only specific routes for the data that needs to be scrapped (gotta think on a method here...)
@@ -109,13 +46,19 @@ async function urlIsReachable(url: string): Promise<boolean> {
     }
 }
 
+// this is very helpful when you don't use a whitelist but a blacklist, but for this assesment it took way to long, but it have bigger precision
 function isBlockedRoute(pathName: string): boolean {
     const datePathRegex = /^\/\d{4}(\/\d{2}){1,2}(\/.*)?$/;
     const longDashSlugRegex = /\/(?:[a-zA-Z0-9]+-){5,}[a-zA-Z0-9]+/;
 
-    return ROUTE_BLOCKLIST.some(pathWords => pathName.toLowerCase().includes(pathWords)) || 
+    return ROUTE_WHITELIST.some(pathWords => pathName.toLowerCase().includes(pathWords)) || 
             datePathRegex.test(pathName) ||
             longDashSlugRegex.test(pathName);
+}
+
+function isWhitelistedRoute(pathName: string): boolean {
+    if (pathName === '/' || pathName === '') return true;
+    return ROUTE_WHITELIST.some(pathWords => pathName.toLowerCase().includes(pathWords));
 }
 
 // return string due to the fact that the Javascript object comparision does not work really well, so we compare two strings
@@ -155,7 +98,7 @@ async function isHtmlPage(url: string, page: Page): Promise<boolean> {
 
 async function getDomainLinks(page: Page, url: string, origin: URL): Promise<CollectedData> {
     // TODO: display this log only on verbose mode
-    console.log("URL: ", url);
+    // console.log("URL: ", url);
     const normalizedUrl: string = normalizeUrl(url);
 
     if (visited.has(normalizedUrl)) return { phoneNumbersList: [], socialMediaLinks: [] };
@@ -189,7 +132,7 @@ async function getDomainLinks(page: Page, url: string, origin: URL): Promise<Col
         try {
             const linkUrl: URL = new URL(link);
 
-            if (isBlockedRoute(linkUrl?.pathname)) return false;
+            if (!isWhitelistedRoute(linkUrl?.pathname)) return false;
             return ((linkUrl.hostname === origin.hostname) &&
                     (linkUrl.protocol === 'http:' || linkUrl.protocol === 'https:'));
         } catch {
