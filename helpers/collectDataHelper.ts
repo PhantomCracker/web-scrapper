@@ -21,8 +21,17 @@ const SOCIAL_DOMAINS = [
     'threads.net'
 ];
 
-// TOASK: if I have found a phone number, should I continue looking for others or should I stop it?
-// TODO: improve the method in getting the phone numbers
+/**
+ * Extracts unique phone numbers from a website.
+ * Phone numbers must have at least 8 digits (after removing non-digit characters) to be considered valid.
+ *
+ * @param {Page} page - a Chromium `Page` instance used to navigate and interact with the webpage
+ * @param {string} url - the URL of the web page from which to extract phone numbers
+ * @returns {Promise<string[]>} - a promise that resolves to an Array of unique phone numbers found on the page
+ * 
+ * TOASK: if I have found a phone number, should I continue looking for others or should I stop it?
+ * TODO: improve the method in getting the phone numbers
+ */
 async function getPhoneNumbers(page: Page, url: string) {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     
@@ -52,7 +61,15 @@ async function getPhoneNumbers(page: Page, url: string) {
     return Array.from(new Set(phoneNumbers));
 }
 
-// get social media links from iFrames too
+/**
+ * Extracts unique social media links from a web page and from the iFrames too
+ *
+ * @param {Page} page - a Chromium `Page` instance used to navigate and interact with the webpage
+ * @param {string} url - the URL of the web page to scrape for social media links
+ * @returns {Promise<string[]>} - a promise that resolves to an array of unique social media link URLs
+ *
+ * Note: The code for extracting links from iFrames is commented out for now. To enable iFrame scraping, uncomment.
+ */
 async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     
@@ -68,7 +85,7 @@ async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
         console.error("Could not get the social media");
     }
 
-    // down from this line it will check the iFrames too for specific links
+    // down from this line it will check the iFrames too for specific links, but due to the fact that I need a lot of speed, I will comment this for the moment
     /*
     const iFramesSourcesList = await page.$$eval('iframe', iframes => iframes.map(iframe => iframe.getAttribute('src')).filter(Boolean)); // use Playwright instead of Cheerio because i don't need the entire HTML
     let iFrameLinksList: string[] = [];
@@ -98,11 +115,29 @@ async function getSocialMediaLinks(page: Page, url: string): Promise<string[]> {
     return Array.from(new Set(mainPageLinksList));
 }
 
+/**
+ * Checks whether a given URL is a social media link.
+ *
+ * This function returns `true` if the URL contains any domain listed in the `SOCIAL_DOMAINS` array
+ *
+ * @param {string} url - the URL string to check
+ * @returns {boolean}
+ */
 function isSocialLink(url: string): boolean {
   return SOCIAL_DOMAINS.some(domain => url.includes(domain));
 }
 
-// TODO: Instead of regex, maybe i should look for a npm package that might work with Google for addresses
+/**
+ * Attempts to extract physical addresses or location from a web page
+ * The function may visit multiple subpages if they are labeled as "contact", "about", or "find us"
+ * For additional checks please check the comments inside the function
+ * 
+ * @param {Page} page - A Chromium `Page` instance used for navigation and DOM extraction
+ * @param {string} url - The URL of the starting web page
+ * @returns {Promise<string[]>} A promise that resolves to an array of unique physical addresses found
+ *
+ * TODO: Instead of regex, maybe i should look for a npm package that might work with Google for addresses
+ */
 async function getPhysicalAddress(page: Page, url: string): Promise<string[]> {
     let addressesList: string[] = [];
     let addressRegex: RegExp = /\d{1,5}\s[\w\s.,'-]+,\s*[\w\s.'-]+,\s*[A-Z]{2}\s*\d{5}(-\d{4})?/gi; 

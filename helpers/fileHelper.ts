@@ -15,6 +15,21 @@ export interface CsvRow {
 
 const newFields: string[] = ['physical_addresses', 'phone_numbers', 'social_media_links'];
 
+/**
+ * Reads a CSV file and extracts all rows
+ *
+ * @param {string} filePath - the path to the CSV file to read
+ * @returns {Promise<CsvRow[]>} - a promise that resolves to an array of CsvRow objects, one for each full row found
+ *
+ * @typedef {Object} CsvRow
+ * @property {string} domain - the domain, always trimmed
+ * @property {string | undefined} company_commercial_name - the commercial name of the company, trimmed or undefined
+ * @property {string | undefined} company_legal_name - the legal name of the company, trimmed or undefined
+ * @property {string[]} company_all_available_names - array of trimmed company names, split by "|" or an empty array if not present
+ * @property {string[]} physical_addresses - array of trimmed physicial addresses, split by "|" or an empty array if not present
+ * @property {string[]} social_media_links - array of trimmed social media links, split by "|" or an empty array if not present
+ * @property {string[]} phone_numbers - array of phone numbers, split by "|" or an empty array if not present
+ */
 function readFullRowsFromCSV(filePath: string): Promise<CsvRow[]> {
     return new Promise((resolve, reject) => {
         const rows: CsvRow[] = [];
@@ -37,6 +52,14 @@ function readFullRowsFromCSV(filePath: string): Promise<CsvRow[]> {
     });
 }
 
+/**
+ * Merges updated data into existing CSV based on the `domain` field as the primary key.
+ * Only the fields listed in `newFields` are considered for updating.
+ *
+ * @param {CsvRow[]} existingData - array of original data rows
+ * @param {CsvRow[]} updatesData - array of new/updated data rows
+ * @returns {CsvRow[]} - the merged array of data rows
+ */
 function mergeData(existingData: CsvRow[], updatesData: CsvRow[]): CsvRow[] {
     const domainsRowMap = new Map<string, CsvRow>();
 
@@ -63,6 +86,12 @@ function mergeData(existingData: CsvRow[], updatesData: CsvRow[]): CsvRow[] {
     return Array.from(domainsRowMap.values());
 }
 
+/**
+ * Returns a list of all unique header names (field names) presented in a CSV file.
+ *
+ * @param {CsvRow[]} rowsList - array of objects representing rows of a CSV file
+ * @returns {string[]} - an array of unique header names
+ */
 function getAllHeaders(rowsList: CsvRow[]): string[] {
     const headerSet = new Set<string>();
     
@@ -74,6 +103,14 @@ function getAllHeaders(rowsList: CsvRow[]): string[] {
     return Array.from(headerSet);
 }
 
+/**
+ * Writes an array of data rows to a CSV file.
+ * Array fields are converted to a pipe-separated string for CSV compatibility.
+ *
+ * @param {string} filePath - the path where the CSV file will be written
+ * @param {CsvRow[]} data - the array of row objects to write to the CSV file
+ * @returns {Promise<void>} - a promise that resolves when writing is complete
+ */
 async function writeCsv(filePath: string, data: CsvRow[]): Promise<void> {
     const headersList = getAllHeaders(data);
     const csvWriter = createObjectCsvWriter({
@@ -96,7 +133,15 @@ async function writeCsv(filePath: string, data: CsvRow[]): Promise<void> {
     )
 }
 
-// i will use output path too so i don't alter the original document
+/**
+ * Merges new data and an existing CSV file into a new file.
+ * This function does not modify the original file; all changes are written to `outputPath`.
+ *
+ * @param {string} inputPath - the path to the original CSV file to read
+ * @param {CsvRow[]} newData - the array of new or updated data rows
+ * @param {string} outputPath - the path where the final CSV file will be written
+ * @returns {Promise<void>} - a promise that resolves when the merged file has been written
+ */
 async function mergeCsvFiles(inputPath: string, newData: CsvRow[], outputPath: string): Promise<void> {
     const oldRows = await readFullRowsFromCSV(inputPath);
     const mergedRows = mergeData(oldRows, newData);

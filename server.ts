@@ -24,11 +24,29 @@ interface QueryInput {
     facebook?: string
 }
 
+/**
+ * Builds a search query string by concatenating non-empty fields from a given input object (please check params for object details)
+ *
+ * @param {QueryInput} params - an object containing any subset of the fields: name, phone, website, facebook
+ * @param {string} [params.name] - the name to include in the query
+ * @param {string} [params.phone] - the phone number to include in the query
+ * @param {string} [params.website] - the website to include in the query
+ * @param {string} [params.facebook] - the Facebook profile or page to include in the query
+ * @returns {string} - a space-separated string containing only the non-empty fields
+ */
 function buildQuery({ name, phone, website, facebook }: QueryInput): string {
     return [name, phone, website, facebook].filter(Boolean).join(' ');
 }
 
-// because we have generated the CSV file, I will not send the indexes and records to Algolia via code, just upload the generated file to have records on it
+/**
+ * POST /search-company
+ * Searches for a company using Algolia based on provided query fields.
+ * Because we have generated the CSV file, I will not send the indexes and records to Algolia via code, just upload the generated file to have records on it.
+ *
+ * @param {Request} request
+ * @param {Response} response
+ * @returns {Promise<Response>}
+ */
 // @ts-ignore
 app.post('/search-company', async (request: Request, response: Response) => {
     const { name, phone, website, facebook } = request.body as QueryInput;
