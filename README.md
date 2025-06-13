@@ -36,6 +36,7 @@ To run this project, you will need to add the following environment variables to
 
 
 ## Run Locally
+Please be sure that you run Node 24+
 
 - Clone the project
 
@@ -53,6 +54,11 @@ To run this project, you will need to add the following environment variables to
 
 ```bash
   yarn
+```
+
+- Install Playwright dependencies
+```bash
+  npx playwright install
 ```
 
 - Compile the TypeScript files to JavaScript files
@@ -101,7 +107,6 @@ Receive all the fields available for the found company
 
 ## Roadmap
 
-- optimize the time it takes to run over all the websites
 - retry failed domains a number of times (1-3 times)
 - add config file for concurency and other global variables like social media
 - try HTTP and WWW variations too
@@ -111,6 +116,15 @@ Receive all the fields available for the found company
 - work on redirect codes (300) too
 - check CORS issues
 - add verbose feature
+## Tech Stack
+
+**Client:** Typescript / Vanilla JS
+
+**Server:** Node, Express
+
+**Main dependencies:** Playwright, Cheerio, AlgoliaSearch
+
+
 ## Authors
 
 - [@PhantomCracker](https://github.com/PhantomCracker)
