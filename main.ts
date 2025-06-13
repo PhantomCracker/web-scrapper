@@ -2,8 +2,7 @@ import { Browser, chromium, Page } from 'playwright';
 import pMap from 'p-map';
 
 import urlHelper from './helpers/urlHelper';
-import fileHelper from './helpers/fileHelper';
-import { CsvRow } from './helpers/fileHelper';
+import fileHelper, { CsvRow } from './helpers/fileHelper';
 import collectDataHelper from './helpers/collectDataHelper';
 import playwrightHelper from './helpers/playwrightHelper';
 

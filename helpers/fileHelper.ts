@@ -9,7 +9,8 @@ export interface CsvRow {
     company_all_available_names?: string[],
     physical_addresses?: string | string[],
     social_media_links?: string | string[],
-    phone_numbers?: string | string[]
+    phone_numbers?: string | string[],
+    [key: string]: any // fix small TS issue
 }
 
 const newFields: string[] = ['physical_addresses', 'phone_numbers', 'social_media_links'];
@@ -52,11 +53,11 @@ function mergeData(existingData: CsvRow[], updatesData: CsvRow[]): CsvRow[] {
         const mergedRow = { ...row };
 
         for (const field of newFields) {
-            if (field in newRow && newRow[field] !== undefined && newRow !== null && (!row[field] || row[field] === '')) {
+            if (field in newRow && newRow[field] !== undefined && newRow !== null && (row && (!row[field] || row[field] === ''))) {
                 mergedRow[field] = newRow[field];
             } 
         }
-        domainsRowMap.set(domain, mergedRow);
+        domainsRowMap.set(domain, mergedRow as CsvRow);
     }
 
     return Array.from(domainsRowMap.values());

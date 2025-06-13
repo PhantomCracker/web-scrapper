@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import { algoliasearch, SearchClient } from 'algoliasearch';
+import { algoliasearch, SearchClient, SearchResponse } from 'algoliasearch';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const appID: string = process.env.APP_ID;
-const apiKey: string = process.env.API_KEY;
-const indexName: string = process.env.INDEX_NAME;
+const appID: string = process.env.APP_ID!;
+const apiKey: string = process.env.API_KEY!;
+const indexName: string = process.env.INDEX_NAME!;
 const PORT: number = 3000;
 
 if (!appID || !apiKey || !indexName) {
@@ -29,7 +29,8 @@ function buildQuery({ name, phone, website, facebook }: QueryInput): string {
 }
 
 // because we have generated the CSV file, I will not send the indexes and records to Algolia via code, just upload the generated file to have records on it
-app.post('/search-company', async(request: Request, response: Response) => {
+// @ts-ignore
+app.post('/search-company', async (request: Request, response: Response) => {
     const { name, phone, website, facebook } = request.body as QueryInput;
 
     if (!name && !phone && !website && !facebook) {
@@ -49,6 +50,7 @@ app.post('/search-company', async(request: Request, response: Response) => {
                 }
             ]
         });
+        // @ts-ignore
         const bestMatch = algoliaResult?.results[0]?.hits[0] || null;
         
         return response.json({ match: bestMatch });
