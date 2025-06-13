@@ -25,6 +25,7 @@ interface QueryInput {
 }
 
 function buildQuery({ name, phone, website, facebook }: QueryInput): string {
+    return [name, phone, website, facebook].filter(Boolean).join(' ');
 }
 
 // because we have generated the CSV file, I will not send the indexes and records to Algolia via code, just upload the generated file to have records on it
