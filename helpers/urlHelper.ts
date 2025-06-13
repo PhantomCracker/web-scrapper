@@ -119,6 +119,8 @@ function normalizeUrl(fullURL: string): string {
  */
 async function isHtmlPage(url: string, page: Page): Promise<boolean> {
     try {
+        // check the length also, a normal URL should not have more than 75 characters, but to be sure, let's double the value for the checks
+        if (url.length > 200) return false;
         const response = await page.request.head(url);
         const contentType = response.headers()['content-type'];
 
