@@ -8,6 +8,7 @@ A web scrapper created in NodeJS using Playwright, Cheerio, Express and AlgoliaS
 
 ## Features
 
+- please note that the required files that are needed (`sample-websites.csv` and `sample-websites-company-names.csv`) are already in the project
 - read multiple URLs from a CSV file
 - scrape for phone number(s), social media link(s) and physical address(es)
 - write the data found in the websites to a new CSV file based on the domain (domain being the primary key)
@@ -100,6 +101,7 @@ Receive all the fields available for the found company
 
 ## Roadmap
 
+- optimize the time it takes to run over all the websites
 - retry failed domains a number of times (1-3 times)
 - add config file for concurency and other global variables like social media
 - try HTTP and WWW variations too
