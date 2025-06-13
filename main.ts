@@ -67,9 +67,6 @@ import playwrightHelper from './helpers/playwrightHelper';
             const domainLinks = await urlHelper.getDomainLinks(page, domain, origin);
             analystData.phonesCrawled += domainLinks.phoneNumbersList.length;
             analystData.socialMediaCrawled += domainLinks.socialMediaLinks.length;
-
-            console.log(domainLinks);
-            // console.log("Domains crawled: ", analystData.websitesCrawled);
             
             newRow.physical_addresses = physicalAddressesList;
             newRow.social_media_links = domainLinks.socialMediaLinks;
