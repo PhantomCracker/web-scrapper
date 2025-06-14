@@ -129,3 +129,26 @@ Receive all the fields available for the found company
 
 - [@PhantomCracker](https://github.com/PhantomCracker)
 
+
+## Documentation
+
+This section represents the explication for the last point from the assessment.
+
+#### Compare with resources from the internet
+As a first idea, I am thinking to compare with real data from the internet, for example:
+- physical addresses can be checked via Google Maps because usually the companies have their physical address added to the Google Maps (please note that the results need to match with the name of the company)
+- phone numbers can also be checked on different VOIP services like True Caller
+- regarding the social media links we can check the profiles and see if the accounts are verified and match the name of the company
+- moreover we can do a mix of those provided "solutions" for a better accuracy
+- for example, usually social media contains the phone number, physical address and for sure the social media link
+
+#### Compare with manual data
+Another option is to create a truth dataset and compare the values crawled with the ones from the data set:
+- to be more explicit, you can create the truth dataset by going manually on the website and search for the specific resources
+- additionally, you can add data to the dataset from the trusted sources to have a bigger accuracy
+- in the end, compare the data crawled with the truth dataset
+
+#### Best practices
+- be sure that the scrapping algorithm is always updated
+- monitor the data and the logs for additional accuracy
+- compare with truth dataset
